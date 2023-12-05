@@ -28,7 +28,7 @@ def get_imports(parser: OpenAPIParser, model_path: Path) -> Dict[str, object]:
         if reference:
             imports.append(data_type.all_imports)
             imports.append(
-                Import.from_full_path(f'.{model_path.stem}.{reference.name}')
+                Import.from_full_path(f'{model_path.stem}.{reference.name}')
             )
     for from_, imports_ in parser.imports_for_fastapi.items():
         imports[from_].update(imports_)

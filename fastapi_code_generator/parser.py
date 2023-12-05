@@ -25,7 +25,6 @@ from datamodel_code_generator import (
     LiteralType,
     OpenAPIScope,
     PythonVersion,
-    cached_property,
     snooper_to_methods,
 )
 from datamodel_code_generator.imports import Import, Imports
@@ -43,6 +42,7 @@ from datamodel_code_generator.parser.openapi import (
     ResponseObject,
 )
 from datamodel_code_generator.types import DataType, DataTypeManager, StrictTypes
+from datamodel_code_generator.util import cached_property
 from pydantic import BaseModel
 
 RE_APPLICATION_JSON_PATTERN: Pattern[str] = re.compile(r'^application/.*json$')
@@ -231,7 +231,7 @@ class OpenAPIParser(OpenAPIModelParser):
             custom_class_name_generator=custom_class_name_generator,
             field_extra_keys=field_extra_keys,
             field_include_all_keys=field_include_all_keys,
-            openapi_scopes=[OpenAPIScope.Schemas, OpenAPIScope.Paths],
+            openapi_scopes=[OpenAPIScope.Schemas, OpenAPIScope.Paths, OpenAPIScope.Parameters],
         )
         self.operations: Dict[str, Operation] = {}
         self._temporary_operation: Dict[str, Any] = {}
@@ -239,7 +239,16 @@ class OpenAPIParser(OpenAPIModelParser):
         self.data_types: List[DataType] = []
 
     def parse_info(self) -> Optional[Dict[str, Any]]:
-        result = self.raw_obj.get('info', {}).copy()
+        info = self.raw_obj.get('info', {})
+        result: Dict[str, Any] = {}
+        extra: Dict[str, Any] = {}
+        for key, value in info.items():
+            if key.startswith('x-'):
+                extra[key] = value
+            else:
+                result[key] = value
+        if extra:
+            result['extra'] = extra
         servers = self.raw_obj.get('servers')
         if servers:
             result['servers'] = servers
